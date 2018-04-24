@@ -1,0 +1,8 @@
+# Load modules and virtual environments
+#
+# Script must be sourced to modify the current shell.
+#
+module load spark
+module load tensorflow
+
+source ~/spark_keras2/bin/activate

@@ -1,6 +1,8 @@
 # Selects a subset of the iDigBio media data and tags records according to the
 # labels given to us by the Smithsonian. Write out the resulting few thousand
 # records as a new parquet.
+#
+# Runnable on the GUODA spark cluster with spark-submit
 
 #from urllib.request import urlopen
 #from io import BytesIO

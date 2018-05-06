@@ -5,11 +5,17 @@
 
 # In[1]:
 
+import sys
 
 # Limit to CPU
 import os
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
+
+
+activate_this_file = "/home/mcollins/spark_keras2/bin/activate_this.py"
+with open(activate_this_file) as f:
+    exec(f.read(), {'__file__': activate_this_file})
 
 
 import h5py

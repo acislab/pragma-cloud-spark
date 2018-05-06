@@ -1,9 +1,9 @@
 import sys
 import os
 
-#activate_this_file = "/home/mcollins/spark_keras2/bin/activate_this.py"
-#with open(activate_this_file) as f:
-#    exec(f.read(), {'__file__': activate_this_file})
+activate_this_file = "/home/mcollins/spark_keras2/bin/activate_this.py"
+with open(activate_this_file) as f:
+    exec(f.read(), {'__file__': activate_this_file})
 
 
 #os.environ["PYSPARK_PYTHON"] = "spark_keras2/bin/python"

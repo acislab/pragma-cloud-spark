@@ -1,0 +1,19 @@
+{
+    "display_name": "Python 3 Spark",
+    "language": "python",
+    "argv": [
+        "/home/mcollins/spark_keras2/bin/python",
+        "-m",
+        "ipykernel",
+        "-f",
+        "{connection_file}"
+    ],
+    "env": {
+        "SPARK_HOME": "/opt/spark/latest/",
+        "PYSPARK_PYTHON": "/home/mcollins/spark_keras2/bin/python",
+        "PYTHONPATH": "/opt/spark/latest/python/:/opt/spark/latest/python/lib/py4j-0.10.6-src.zip",
+        "PYTHONSTARTUP": "/opt/spark/latest/python/pyspark/shell.py",
+        "PYSPARK_SUBMIT_ARGS": "--master spark://pc-171.calit2.optiputer.net:7077 pyspark-shell"
+    }
+}
+

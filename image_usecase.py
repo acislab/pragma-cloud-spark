@@ -30,17 +30,14 @@ from keras import backend as K
 #sys.path = ['/home/mcollins/spark_keras2/lib/python3.6/site-packages', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/elephas-0.3-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Flask-1.0.2-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/itsdangerous-0.24-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/click-6.7-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Werkzeug-0.14.1-py3.6.egg', '/home/mcollins/pragma-cloud-spark']
 from elephas.ml_model import ElephasEstimator
 from elephas import optimizers as elephas_optimizers
+from elephas.ml.adapter import from_data_frame, to_data_frame
+
+
 #sys.path = orig_path
 
 #limit to CPU
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
 os.environ["CUDA_VISIBLE_DEVICES"] = ""
-
-
-
-
-
-
 
 
 from pyspark.context import SparkContext
@@ -60,17 +57,20 @@ print(image_df.count())
 #vector_df = image_df.withColumn("vector_images", to_vectors(col("imgnpa")))
 
 # Let's try just numpy arrays!
-vector_df = image_df.select(col("contaminated"), col("imgnpa").alias("vector_images"))
+#vector_df = image_df.select(col("contaminated"), col("imgnpa").alias("vector_images"))
+
+
+#vector_df = to_data_frame(sc, image_df["
 
 
 # And verify they're all the same size
-get_vector_length = F.udf(lambda vec : len(vec), T.IntegerType()) # vec.size for DenseVector
-vector_length_df = vector_df.withColumn("vector_length", get_vector_length("vector_images"))
-
-(vector_length_df
-  .select(F.max(col("vector_length")), F.min(col("vector_length")))
-  .show()
-)
+#get_vector_length = F.udf(lambda vec : len(vec), T.IntegerType()) # vec.size for DenseVector
+#vector_length_df = vector_df.withColumn("vector_length", get_vector_length("vector_images"))
+#
+#(vector_length_df
+#  .select(F.max(col("vector_length")), F.min(col("vector_length")))
+#  .show()
+#)
 
 
 # Scale features
@@ -79,30 +79,49 @@ vector_length_df = vector_df.withColumn("vector_length", get_vector_length("vect
 #fitted_scaler = scaler.fit(vector_length_df)
 #scaled_df = fitted_scaler.transform(vector_length_df)
 
-import numpy as np
+#import numpy as np
 #from sklearn import preprocessing
 #scale = F.udf(lambda x: x / 255.0, T.Vec)
 #scaled_df = vector_length_df.withColumn("scaled_features", scale(col("vector_images")))
 
 #features is a magic name in the prediction code
-scaled_df = vector_length_df.withColumn("features", col("vector_images"))
+#scaled_df = vector_length_df.withColumn("features", col("vector_images"))
+scaled_df = image_df.withColumn("features", col("imgnpa")).withColumn("label", col("contaminated"))
+
+features, labels = from_data_frame(scaled_df, True, 2)
+
+import numpy as np
+# Change features to right shape
+def raise_dim(l):
+    x = np.array(l)
+    r = x[0::3].reshape(-1, 2)
+    g = x[1::3].reshape(-1, 2)
+    b = x[2::3].reshape(-1, 2)
+    return np.expand_dims(np.array([r, g, b]), axis=0)
+
+f2 = np.array([raise_dim(x) for x in features])
+
+lb_df = to_data_frame(sc, f2, labels, True)
+lb_df.printSchema()
+lb_df.show()
 
 ## Turn back mllib vectors
 #from pyspark.mllib import 
 #to_mllib_vectors = F.udf(lambda x: 
 
 
-scaled_df.show()
+#scaled_df.show()
 
 
 # Split in to train/test
-splits = scaled_df.randomSplit([0.8, 0.2], 314)
+splits = lb_df.randomSplit([0.8, 0.2], 314)
 train_df = splits[0]
 test_df = splits[1]
 
 print(train_df.count())
 print(test_df.count())
 
+train_df.show()
 
 # Model
 
@@ -145,10 +164,10 @@ adadelta = elephas_optimizers.Adadelta()
 # Initialize SparkML Estimator and set all relevant properties
 estimator = ElephasEstimator()
 estimator.setFeaturesCol("features")             # These two come directly from pyspark,
-estimator.setLabelCol("contaminated")                 # hence the camel case. Sorry :)
+estimator.setLabelCol("label")                 # hence the camel case. Sorry :)
 estimator.set_keras_model_config(model.to_yaml())       # Provide serialized Keras model
 estimator.set_optimizer_config(adadelta.get_config())   # Provide serialized Elephas optimizer
-estimator.set_categorical_labels(False)
+estimator.set_categorical_labels(True)
 estimator.set_nb_classes(2)
 estimator.set_num_workers(1)  # We just use one worker here. Feel free to adapt it.
 estimator.set_nb_epoch(20) 

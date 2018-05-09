@@ -23,13 +23,18 @@ from keras import backend as K
 #e = importlib.util.module_from_spec(spec)
 #spec.loader.exec_module(e)
 
-print(sys.path)
-orig_path = sys.path
-sys.path = ['/home/mcollins/spark_keras2/lib/python3.6/site-packages', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/elephas-0.3-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Flask-1.0.2-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/itsdangerous-0.24-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/click-6.7-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Werkzeug-0.14.1-py3.6.egg', '/home/mcollins/pragma-cloud-spark', '/opt/spark/2.3.0/python/lib/pyspark.zip', '/opt/spark/2.3.0/python/lib/py4j-0.10.6-src.zip', '/opt/spark/2.3.0/jars/spark-core_2.11-2.3.0.jar', '/opt/python/lib/python36.zip', '/opt/python/lib/python3.6', '/opt/python/lib/python3.6/lib-dynload']
+# Fixed this by exporting pyspark pthon version to be the one inside the virtualenv
+#print(sys.path)
+#orig_path = sys.path
+#sys.path = ['/home/mcollins/spark_keras2/lib/python3.6/site-packages', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/elephas-0.3-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Flask-1.0.2-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/itsdangerous-0.24-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/click-6.7-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Werkzeug-0.14.1-py3.6.egg', '/home/mcollins/pragma-cloud-spark', '/opt/spark/2.3.0/python/lib/pyspark.zip', '/opt/spark/2.3.0/python/lib/py4j-0.10.6-src.zip', '/opt/spark/2.3.0/jars/spark-core_2.11-2.3.0.jar', '/opt/python/lib/python36.zip', '/opt/python/lib/python3.6', '/opt/python/lib/python3.6/lib-dynload']
 #sys.path = ['/home/mcollins/spark_keras2/lib/python3.6/site-packages', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/elephas-0.3-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Flask-1.0.2-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/itsdangerous-0.24-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/click-6.7-py3.6.egg', '/home/mcollins/spark_keras2/lib/python3.6/site-packages/Werkzeug-0.14.1-py3.6.egg', '/home/mcollins/pragma-cloud-spark']
 from elephas.ml_model import ElephasEstimator
 from elephas import optimizers as elephas_optimizers
-sys.path = orig_path
+#sys.path = orig_path
+
+#limit to CPU
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
 
@@ -79,7 +84,8 @@ import numpy as np
 #scale = F.udf(lambda x: x / 255.0, T.Vec)
 #scaled_df = vector_length_df.withColumn("scaled_features", scale(col("vector_images")))
 
-scaled_df = vector_length_df.withColumn("scaled_features", col("vector_images"))
+#features is a magic name in the prediction code
+scaled_df = vector_length_df.withColumn("features", col("vector_images"))
 
 ## Turn back mllib vectors
 #from pyspark.mllib import 
@@ -138,7 +144,7 @@ adadelta = elephas_optimizers.Adadelta()
 
 # Initialize SparkML Estimator and set all relevant properties
 estimator = ElephasEstimator()
-estimator.setFeaturesCol("scaled_features")             # These two come directly from pyspark,
+estimator.setFeaturesCol("features")             # These two come directly from pyspark,
 estimator.setLabelCol("contaminated")                 # hence the camel case. Sorry :)
 estimator.set_keras_model_config(model.to_yaml())       # Provide serialized Keras model
 estimator.set_optimizer_config(adadelta.get_config())   # Provide serialized Elephas optimizer
@@ -150,16 +156,25 @@ estimator.set_batch_size(128)
 estimator.set_verbosity(1)
 estimator.set_validation_split(0.15)
 
-from pyspark.ml import Pipeline
 
-pipeline = Pipeline(stages=[estimator])
-
-
-
-fitted_pipeline = pipeline.fit(train_df) # Fit model to data
-
-pnl = prediction.select("index_category", "prediction")
+fitted_model = estimator.fit(train_df)
+prediction = fitted_model.transform(test_df)
+pnl = prediction.select("label", "prediction")
 pnl.show(100)
+
+
+#from pyspark.ml import Pipeline
+
+#pipeline = Pipeline(stages=[estimator])
+
+
+
+#fitted_pipeline = pipeline.fit(train_df) # Fit model to data
+
+#prediction = fitted_pipeline.transform(test_df)
+
+#pnl = prediction.select("index_category", "prediction")
+#pnl.show(100)
 
 
 

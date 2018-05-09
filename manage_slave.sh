@@ -13,7 +13,9 @@ mkdir -p $SPARK_LOCAL_DIRS
 case $1 in
 
     start)
-        /opt/spark/2.3.0/sbin/start-slave.sh spark://compute-0-0:7077
+#        /opt/spark/2.3.0/sbin/start-slave.sh spark://compute-0-0:7077
+        /opt/spark/2.3.0/sbin/start-slave.sh spark://pc-171.calit2.optiputer.net:7077
+#        /opt/spark/2.3.0/sbin/start-slave.sh spark://10.1.171.1:7077
         ;;
     stop)
         /opt/spark/2.3.0/sbin/stop-slave.sh

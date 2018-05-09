@@ -22,8 +22,8 @@ from elephas.ml.adapter import from_data_frame, to_data_frame
 
 
 #limit to CPU
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+#os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
 from pyspark.context import SparkContext
@@ -33,7 +33,12 @@ sqlContext = SQLContext(sc)
 
 
 
-image_df = sqlContext.read.parquet("data/idigbio-media-20171112T013207-mercury-images-100.parquet")
+image_df = (sqlContext
+             .read
+             .parquet("data/idigbio-media-20171112T013207-mercury-images-32x32.parquet")
+             .limit(1000)
+             .filter(col("imgnpa").isNotNull())
+           )
 
 print(image_df.count())
 
@@ -107,7 +112,7 @@ model.add(Dropout(0.5))
 model.add(Dense(2))
 model.add(Activation('sigmoid'))
 
-model.compile(loss='sparse_categorical_crossentropy',
+model.compile(loss='categorical_crossentropy',
               optimizer='rmsprop',
               metrics=['accuracy'])
 
@@ -127,16 +132,17 @@ from elephas.spark_model import SparkModel
 from elephas import optimizers as elephas_optimizers
 
 adagrad = elephas_optimizers.Adagrad()
-spark_model = SparkModel(sc,model, optimizer=adagrad, frequency='epoch', mode='asynchronous', num_workers=2)
+spark_model = SparkModel(sc,model, optimizer=adagrad, frequency='epoch', mode='asynchronous', num_workers=8)
 spark_model.train(lp_rdd, nb_epoch=20, batch_size=32, verbose=0, validation_split=0.1)
 
 print(spark_model)
 
 
 
-#fitted_model = estimator.fit(train_df)
-#prediction = fitted_model.transform(test_df)
-#pnl = prediction.select("label", "prediction")
-#pnl.show(100)
+prediction = spark_model.predict_classes(features_test)
+print(prediction)
+truth = [l[1] for l in labels_test]
 
+from sklearn.metrics import confusion_matrix
+print(confusion_matrix(truth, prediction))
 

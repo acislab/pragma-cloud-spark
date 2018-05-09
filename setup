@@ -5,4 +5,6 @@
 module load spark
 module load tensorflow
 
+export PYSPARK_PYTHON=/home/mcollins/spark_keras2/bin/python
+
 source ~/spark_keras2/bin/activate

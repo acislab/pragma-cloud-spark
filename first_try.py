@@ -9,8 +9,8 @@ import sys
 
 # Limit to CPU
 import os
-os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-os.environ["CUDA_VISIBLE_DEVICES"] = ""
+#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+#os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
 activate_this_file = "/home/mcollins/spark_keras2/bin/activate_this.py"

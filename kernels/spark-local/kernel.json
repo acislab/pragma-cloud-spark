@@ -1,0 +1,18 @@
+{
+    "display_name": "Python 3 Spark Local",
+    "language": "python",
+    "argv": [
+        "/home/mcollins/spark_keras2/bin/python",
+        "-m",
+        "ipykernel",
+        "-f",
+        "{connection_file}"
+    ],
+    "env": {
+        "SPARK_HOME": "/opt/spark/latest/",
+        "PYSPARK_PYTHON": "/home/mcollins/spark_keras2/bin/python",
+        "PYTHONPATH": "/opt/spark/latest/python/:/opt/spark/latest/python/lib/py4j-0.10.6-src.zip",
+        "PYTHONSTARTUP": "/opt/spark/latest/python/pyspark/shell.py"
+    }
+}
+

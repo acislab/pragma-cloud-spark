@@ -22,8 +22,8 @@ from elephas.ml.adapter import from_data_frame, to_data_frame
 
 
 #limit to CPU
-#os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
-#os.environ["CUDA_VISIBLE_DEVICES"] = ""
+os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"   # see issue #152
+os.environ["CUDA_VISIBLE_DEVICES"] = ""
 
 
 from pyspark.context import SparkContext
@@ -36,7 +36,7 @@ sqlContext = SQLContext(sc)
 image_df = (sqlContext
              .read
              .parquet("data/idigbio-media-20171112T013207-mercury-images-32x32.parquet")
-             .limit(1000)
+             .limit(100)
              .filter(col("imgnpa").isNotNull())
            )
 
